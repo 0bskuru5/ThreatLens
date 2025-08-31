@@ -60,7 +60,7 @@ jobs:
     - name: Run backend tests
       run: |
         echo "Running basic backend tests..."
-        npm test -- --testPathPattern=basic.test.js --verbose --passWithNoTests
+        npx jest server/__tests__/basic.test.js --verbose --passWithNoTests
         echo "Backend basic tests completed successfully"
       env:
         NODE_ENV: test
@@ -104,7 +104,7 @@ jobs:
       working-directory: ./client
       run: |
         echo "Running basic frontend tests..."
-        npm run test -- --run --reporter=verbose --passWithNoTests
+        npx vitest run src/App.test.tsx --reporter=verbose
         echo "Frontend basic tests completed successfully"
       env:
         CI: true
@@ -128,15 +128,19 @@ jobs:
 
     - name: Run security scan with Trivy
       run: |
-        # Install Trivy if not available
+        # Install Trivy
+        echo "Installing Trivy..."
+        wget -qO- https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0
+
+        # Verify Trivy installation
         if ! command -v trivy &> /dev/null; then
-          echo "Installing Trivy..."
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.47.0
+          echo "Trivy installation failed"
+          exit 1
         fi
 
         # Run Trivy filesystem scan
         echo "Running Trivy security scan..."
-        trivy fs --format sarif --output trivy-results.sarif --ignore-unfixed --no-progress .
+        trivy fs --format sarif --output trivy-results.sarif --ignore-unfixed --no-progress --timeout 10m .
 
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v3
