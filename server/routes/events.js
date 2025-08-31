@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const SecurityEvent = require('../models/SecurityEvent');
 const { broadcastSecurityEvent } = require('../services/websocket');
+const { analyzeEventCorrelations, calculateThreatScore } = require('../services/eventCorrelation');
+const { processAlerts } = require('../services/alerting');
 const router = express.Router();
 
 // Middleware to verify JWT token
@@ -159,6 +161,33 @@ router.post('/', authenticateToken, async (req, res) => {
       raw_data
     });
 
+    // Analyze event for correlations
+    let correlations = [];
+    let threatScore = 0;
+
+    try {
+      correlations = await analyzeEventCorrelations(newEvent);
+      threatScore = calculateThreatScore(newEvent, correlations);
+
+      // Update event with threat score if correlations found
+      if (correlations.length > 0) {
+        await newEvent.update({ threat_score: threatScore });
+      }
+    } catch (correlationError) {
+      console.error('Error analyzing event correlations:', correlationError);
+      // Continue processing even if correlation analysis fails
+    }
+
+    // Process alerts based on correlations and threat score
+    try {
+      if (correlations.length > 0 || threatScore >= 50) {
+        await processAlerts(newEvent, correlations, threatScore);
+      }
+    } catch (alertError) {
+      console.error('Error processing alerts:', alertError);
+      // Continue processing even if alert processing fails
+    }
+
     // Format the response
     const formattedEvent = {
       id: newEvent.id,
@@ -173,7 +202,9 @@ router.post('/', authenticateToken, async (req, res) => {
         city: newEvent.location_city
       },
       request_path: newEvent.request_path,
-      request_method: newEvent.request_method
+      request_method: newEvent.request_method,
+      threat_score: threatScore,
+      correlations_found: correlations.length
     };
 
     // Broadcast the new event to all connected WebSocket clients

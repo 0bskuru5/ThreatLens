@@ -15,6 +15,7 @@ class SecurityEvent {
     this.user_id = data.user_id;
     this.session_id = data.session_id;
     this.raw_data = data.raw_data;
+    this.threat_score = data.threat_score;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }
@@ -41,16 +42,16 @@ class SecurityEvent {
         INSERT INTO security_events (
           event_type, severity, source_ip, user_agent, description,
           location_country, location_city, request_path, request_method,
-          user_id, session_id, raw_data
+          user_id, session_id, raw_data, threat_score
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `;
 
       const values = [
         event_type, severity, source_ip, user_agent, description,
         location_country, location_city, request_path, request_method,
-        user_id, session_id, raw_data
+        user_id, session_id, raw_data, eventData.threat_score || null
       ];
 
       const result = await query(sql, values);

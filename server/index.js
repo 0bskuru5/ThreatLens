@@ -6,6 +6,7 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { testConnection } = require('./config/database');
 const { handleConnection, cleanupDisconnectedClients } = require('./services/websocket');
+const { initializeAlerting, ALERT_CONFIG } = require('./services/alerting');
 require('dotenv').config();
 
 const app = express();
@@ -43,6 +44,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/alerts', require('./routes/alerts'));
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -92,12 +94,16 @@ const startServer = async () => {
       console.error('Failed to connect to database. Server will start but database features may not work.');
     }
 
+    // Initialize alerting service
+    initializeAlerting();
+
     // Start the server
     server.listen(PORT, () => {
       console.log(`ThreatLens server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Database: ${dbConnected ? 'Connected' : 'Disconnected'}`);
       console.log(`WebSocket: Enabled`);
+      console.log(`Alerting: ${ALERT_CONFIG.EMAIL.enabled ? 'Enabled' : 'Disabled'}`);
     });
   } catch (error) {
     console.error('Error starting server:', error);
