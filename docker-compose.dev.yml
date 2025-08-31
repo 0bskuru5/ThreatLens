@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Development PostgreSQL
+  postgres:
+    environment:
+      POSTGRES_DB: threatlens_dev
+      POSTGRES_USER: threatlens
+      POSTGRES_PASSWORD: dev_password
+    volumes:
+      - ./server/scripts/migrations:/docker-entrypoint-initdb.d
+
+  # Development Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      DB_NAME: threatlens_dev
+      DB_PASSWORD: dev_password
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "3001:3001"
+      - "9229:9229"  # Debug port
+
+  # Development Frontend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:3001
+
+  # PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: threatlens-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@threatlens.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    profiles:
+      - dev-tools

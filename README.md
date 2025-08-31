@@ -20,49 +20,230 @@ A Security Operations Center (SOC) dashboard for monitoring and visualizing secu
 - **Real-time**: WebSockets
 - **Authentication**: JWT
 
-## Installation
+## 🚀 Quick Start
 
-### Prerequisites
-- Node.js (v16 or higher)
-- PostgreSQL (v12 or higher)
-- npm or yarn
+### Option 1: Docker (Recommended)
+```bash
+# Clone repository
+git clone https://github.com/0bskuru5/ThreatLens.git
+cd ThreatLens
 
-### Setup
-1. Clone the repository
-   ```bash
-   git clone https://github.com/0bskuru5/ThreatLens.git
-   cd ThreatLens
-   ```
+# Start with Docker Compose
+docker-compose up -d
 
-2. Install dependencies
-   ```bash
-   npm install
-   ```
+# Access the application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:3001
+# PgAdmin: http://localhost:5050
+```
 
-3. Set up environment variables
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database and configuration settings
-   ```
+### Option 2: Local Development
+```bash
+# Clone repository
+git clone https://github.com/0bskuru5/ThreatLens.git
+cd ThreatLens
 
-4. Set up the database
-   ```bash
-   npm run db:migrate
-   npm run db:seed
-   ```
+# Backend setup
+npm install
+cp env.example .env
+# Edit .env with your configuration
+npm run db:migrate
+npm run db:seed
 
-5. Start the development server
-   ```bash
-   npm run dev
-   ```
+# Frontend setup
+cd client
+npm install
 
-## Usage
+# Start both services
+cd ..
+npm run dev
+```
 
-1. Access the dashboard at `http://localhost:3000`
-2. Log in with your credentials
-3. Monitor security events in real-time
-4. Configure alerts and thresholds
-5. Analyze trends using interactive charts
+## 📋 Prerequisites
+
+- **Docker & Docker Compose** (recommended)
+- **Node.js 18+** (for local development)
+- **PostgreSQL 15+** (if running locally)
+- **Git**
+
+## 🏗️ Architecture
+
+```
+ThreatLens/
+├── server/                 # Backend API (Node.js/Express)
+│   ├── config/            # Database & configuration
+│   ├── models/            # Sequelize models
+│   ├── routes/            # API endpoints
+│   ├── services/          # Business logic & WebSocket
+│   └── scripts/           # DB migrations & seeds
+├── client/                # Frontend (React/TypeScript)
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Dashboard pages
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── contexts/      # React contexts
+│   │   └── utils/         # Utility functions
+└── docker/                # Containerization
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+```bash
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=threatlens
+DB_USER=threatlens
+DB_PASSWORD=your_password
+
+# JWT Authentication
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRES_IN=24h
+
+# Server
+PORT=3001
+NODE_ENV=development
+
+# Email (Optional)
+EMAIL_ENABLED=false
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+```
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+# Run all backend tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run integration tests only
+npm run test:integration
+
+# Run unit tests only
+npm run test:unit
+```
+
+### Frontend Tests
+```bash
+cd client
+
+# Run all tests
+npm test
+
+# Run with coverage
+npm run test:coverage
+
+# Run tests in UI mode
+npm run test:ui
+```
+
+## 🐳 Docker Commands
+
+```bash
+# Development environment
+docker-compose -f docker-compose.dev.yml up -d
+
+# Production build
+docker-compose build
+
+# View logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+
+# Stop all services
+docker-compose down
+
+# Clean up volumes
+docker-compose down -v
+```
+
+## 🚀 Deployment
+
+### Development
+```bash
+# Start development servers
+npm run dev
+
+# Frontend only
+cd client && npm run dev
+
+# Backend only
+npm run dev:server
+```
+
+### Production
+```bash
+# Build for production
+cd client && npm run build
+
+# Start production server
+npm start
+```
+
+### Cloud Deployment
+
+#### Railway (Backend)
+1. Connect your GitHub repository
+2. Set environment variables
+3. Deploy automatically
+
+#### Vercel (Frontend)
+```bash
+cd client
+npm i -g vercel
+vercel --prod
+```
+
+## 📊 Usage
+
+### First Login
+- **URL:** http://localhost:3000
+- **Username:** admin
+- **Password:** admin123
+
+### Dashboard Features
+- **Real-time Security Events** - Live monitoring of threats
+- **Interactive Charts** - Drill-down analytics
+- **Threat Map** - Geographic visualization
+- **Alert Management** - Automated notifications
+- **Export Tools** - PDF, CSV, Excel reports
+
+### API Endpoints
+- `GET /api/events` - Security events
+- `GET /api/dashboard/overview` - Dashboard metrics
+- `GET /api/alerts` - Security alerts
+- `POST /api/auth/login` - Authentication
+
+## 🔒 Security Features
+
+- **JWT Authentication** - Secure token-based auth
+- **Rate Limiting** - DDoS protection
+- **Input Validation** - XSS and injection prevention
+- **CORS Protection** - Cross-origin security
+- **Helmet Security** - HTTP security headers
+
+## 📈 Monitoring & Logs
+
+```bash
+# View application logs
+docker-compose logs -f
+
+# Backend logs
+docker-compose logs -f backend
+
+# Database logs
+docker-compose logs -f postgres
+
+# Health check
+curl http://localhost:3001/health
+```
 
 ## Project Structure
 

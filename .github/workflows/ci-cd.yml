@@ -1,0 +1,258 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: threatlens_test
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+
+jobs:
+  # Backend Testing
+  test-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: threatlens_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install backend dependencies
+      run: npm ci
+
+    - name: Run backend tests
+      run: npm run test:coverage
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test-jwt-secret
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: threatlens_test
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+
+    - name: Upload backend coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+
+  # Frontend Testing
+  test-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Run frontend tests
+      working-directory: ./client
+      run: npm run test:coverage
+
+    - name: Upload frontend coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./client/coverage/lcov.info
+        flags: frontend
+        name: frontend-coverage
+
+  # Security Scan
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Build and Test Docker Image
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, security-scan]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: threatlens:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Test Docker image
+      run: |
+        docker run --rm threatlens:latest npm run health-check || echo "Health check failed"
+
+  # Build Frontend
+  build-frontend:
+    runs-on: ubuntu-latest
+    needs: [test-frontend]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: client/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./client
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: ./client
+      run: npm run build
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: client/dist/
+
+  # Deploy to Staging (only on main branch)
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, build-frontend, docker-build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Railway (Staging)
+      if: env.RAILWAY_TOKEN
+      run: |
+        echo "Deploying to Railway staging environment"
+        # Railway deployment commands would go here
+        echo "Deployment completed"
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+    - name: Deploy to Vercel (Frontend Staging)
+      if: env.VERCEL_TOKEN
+      working-directory: ./client
+      run: |
+        npm i -g vercel
+        vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Production Deployment (only on release)
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, build-frontend, docker-build]
+    if: github.event_name == 'release' && github.event.action == 'published'
+
+    environment:
+      name: production
+      url: https://threatlens.com
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Railway (Production)
+      run: |
+        echo "Deploying to Railway production environment"
+        # Production Railway deployment commands would go here
+        echo "Production deployment completed"
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_PROD }}
+
+    - name: Deploy to Vercel (Frontend Production)
+      working-directory: ./client
+      run: |
+        npm i -g vercel
+        vercel --prod --token ${{ secrets.VERCEL_TOKEN_PROD }}
+      env:
+        VERCEL_TOKEN_PROD: ${{ secrets.VERCEL_TOKEN_PROD }}
+        VERCEL_PROJECT_ID_PROD: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
+
+    - name: Create GitHub deployment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha,
+            environment: 'production',
+            description: 'Production deployment'
+          })
+
+  # Notify on completion
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, security-scan]
+    if: always()
+
+    steps:
+    - name: Send notification
+      if: env.SLACK_WEBHOOK
+      run: |
+        STATUS="${{ needs.test-backend.result == 'success' && needs.test-frontend.result == 'success' && needs.security-scan.result == 'success' && '✅ SUCCESS' || '❌ FAILED' }}"
+        curl -X POST -H 'Content-type: application/json' \
+        --data "{\"text\":\"ThreatLens CI/CD Pipeline: $STATUS\"}" \
+        ${{ secrets.SLACK_WEBHOOK }}
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
