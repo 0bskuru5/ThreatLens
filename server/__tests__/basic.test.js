@@ -1,29 +1,31 @@
-describe('Basic Tests', () => {
-  test('should run basic test successfully', () => {
-    expect(true).toBe(true)
-    expect(process.env.NODE_ENV).toBe('test')
-  })
+// Simple test to verify the test environment is working
+test('basic test should pass', () => {
+  expect(true).toBe(true)
+})
 
-  test('should handle basic JSON operations', () => {
-    const testData = { status: 'OK', timestamp: new Date().toISOString() }
-    expect(testData).toHaveProperty('status', 'OK')
-    expect(testData).toHaveProperty('timestamp')
-    expect(typeof testData.timestamp).toBe('string')
-  })
+test('environment check', () => {
+  expect(process.env.NODE_ENV).toBe('test')
+})
 
-  test('should handle basic string operations', () => {
-    const errorMessage = 'Route not found'
-    expect(errorMessage).toBe('Route not found')
-    expect(errorMessage.length).toBeGreaterThan(0)
-  })
+test('basic math operations', () => {
+  expect(1 + 1).toBe(2)
+  expect(2 * 3).toBe(6)
+})
 
-  test('should handle basic object operations', () => {
-    const headers = { 'access-control-allow-origin': '*' }
-    expect(headers).toHaveProperty('access-control-allow-origin')
-  })
+test('string operations', () => {
+  const str = 'test'
+  expect(str.length).toBe(4)
+  expect(str.toUpperCase()).toBe('TEST')
+})
 
-  test('should verify test environment', () => {
-    expect(process.env).toBeDefined()
-    expect(process.env.NODE_ENV).toBeDefined()
-  })
+test('array operations', () => {
+  const arr = [1, 2, 3]
+  expect(arr).toHaveLength(3)
+  expect(arr[0]).toBe(1)
+})
+
+test('object operations', () => {
+  const obj = { id: 1, name: 'test' }
+  expect(obj.id).toBe(1)
+  expect(obj.name).toBe('test')
 })
