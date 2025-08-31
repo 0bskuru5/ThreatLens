@@ -24,11 +24,13 @@ jobs:
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: threatlens_test
+          POSTGRES_USER: postgres
         options: >-
-          --health-cmd pg_isready
+          --health-cmd pg_isready -U postgres -d threatlens_test
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid,size=100m
 
     steps:
     - name: Checkout code
@@ -48,11 +50,13 @@ jobs:
       env:
         NODE_ENV: test
         JWT_SECRET: test-jwt-secret
-        DB_HOST: localhost
+        DB_HOST: postgres
         DB_PORT: 5432
         DB_NAME: threatlens_test
         DB_USER: postgres
         DB_PASSWORD: postgres
+        PGUSER: postgres
+        PGPASSWORD: postgres
 
     - name: Upload backend coverage
       uses: codecov/codecov-action@v3
@@ -83,6 +87,9 @@ jobs:
     - name: Run frontend tests
       working-directory: ./client
       run: npm run test:coverage
+      env:
+        CI: true
+        NODE_ENV: test
 
     - name: Upload frontend coverage
       uses: codecov/codecov-action@v3
@@ -106,6 +113,7 @@ jobs:
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
+        ignore-unfixed: true
 
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v2

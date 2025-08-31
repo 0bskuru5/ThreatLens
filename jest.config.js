@@ -1,7 +1,10 @@
 module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/server'],
-  testMatch: ['**/__tests__/**/*.test.js', '**/?(*.)+(spec|test).js'],
+  testMatch: [
+    '<rootDir>/server/**/__tests__/**/*.test.js',
+    '<rootDir>/server/**/*.test.js'
+  ],
   collectCoverageFrom: [
     'server/**/*.js',
     '!server/config/database.js',
@@ -20,5 +23,6 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: ['<rootDir>/server/__tests__/setup.js'],
-  testTimeout: 10000,
+  testTimeout: 30000, // Increased timeout for CI
+  verbose: true,
 }

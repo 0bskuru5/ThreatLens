@@ -3,16 +3,7 @@
   "version": "1.0.0",
   "description": "SOC Dashboard for monitoring security events",
   "main": "server/index.js",
-  "scripts": {
-    "start": "node server/index.js",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "nodemon server/index.js",
-    "dev:client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "test": "jest",
-    "db:migrate": "node server/scripts/migrate.js",
-    "db:seed": "node server/scripts/seed.js"
-  },
+
   "keywords": [
     "security",
     "soc",
@@ -45,10 +36,17 @@
     "testcontainers": "^10.2.1"
   },
   "scripts": {
+    "start": "node server/index.js",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "nodemon server/index.js",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:integration": "jest --testPathPattern=integration",
-    "test:unit": "jest --testPathPattern=unit"
+    "test:unit": "jest --testPathPattern=unit",
+    "db:migrate": "node server/scripts/migrate.js",
+    "db:seed": "node server/scripts/seed.js"
   }
 }
