@@ -1,22 +1,11 @@
 import { useChartData, useGeolocationData } from '../hooks/useDashboard'
 import Card, { CardHeader, CardContent } from '../components/Card'
+import AdvancedChart from '../components/charts/AdvancedChart'
+import ThreatMap from '../components/charts/ThreatMap'
+import ExportTools from '../components/export/ExportTools'
 import LoadingSpinner from '../components/LoadingSpinner'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts'
 import { format } from 'date-fns'
-import { TrendingUp, Globe, Shield } from 'lucide-react'
+import { TrendingUp, Globe, Shield, Download, MapPin, Activity } from 'lucide-react'
 
 export default function AnalyticsPage() {
   const { data: chartData24h, isLoading: chart24hLoading } = useChartData('24h')
@@ -39,118 +28,68 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
           <p className="text-gray-600">Advanced security analytics and insights</p>
         </div>
+
+        {/* Export tools */}
+        <ExportTools
+          data={chartData24h || []}
+          filename={`threatlens-analytics-${format(new Date(), 'yyyy-MM-dd')}`}
+          title="ThreatLens Security Analytics Report"
+          formats={['pdf', 'csv', 'xlsx', 'json']}
+          columns={[
+            { key: 'time_period', label: 'Time Period' },
+            { key: 'total_events', label: 'Total Events' },
+            { key: 'failed_login', label: 'Failed Logins' },
+            { key: 'sql_injection', label: 'SQL Injections' },
+            { key: 'xss_attempt', label: 'XSS Attempts' },
+            { key: 'command_injection', label: 'Command Injections' }
+          ]}
+        />
       </div>
 
       {/* Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 24-hour timeline */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Events Timeline (24h)</h3>
-            <p className="text-sm text-gray-600">Hourly event distribution</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {chart24hLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <LoadingSpinner />
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData24h}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time_period" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="failed_login"
-                      stroke="#ef4444"
-                      strokeWidth={2}
-                      name="Failed Login"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="sql_injection"
-                      stroke="#f59e0b"
-                      strokeWidth={2}
-                      name="SQL Injection"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="xss_attempt"
-                      stroke="#10b981"
-                      strokeWidth={2}
-                      name="XSS Attempt"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* 24-hour timeline with drill-down */}
+        <AdvancedChart
+          title="Events Timeline (24h)"
+          data={chartData24h || []}
+          type="line"
+          dataKeys={['total_events', 'failed_login', 'sql_injection', 'xss_attempt']}
+          colors={['#3b82f6', '#ef4444', '#f59e0b', '#10b981']}
+          height={300}
+          showTrend={true}
+          drillDown={true}
+          onDrillDown={(data) => console.log('Drill-down:', data)}
+        />
 
         {/* 7-day overview */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Weekly Trends</h3>
-            <p className="text-sm text-gray-600">Daily event patterns over 7 days</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {chart7dLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <LoadingSpinner />
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData7d}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time_period" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="total_events" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <AdvancedChart
+          title="Weekly Trends"
+          data={chartData7d || []}
+          type="bar"
+          dataKeys={['total_events']}
+          colors={['#3b82f6']}
+          height={300}
+          showTrend={true}
+        />
       </div>
 
       {/* Geolocation and insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Geolocation chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Geographic Distribution</h3>
-            <p className="text-sm text-gray-600">Security events by country</p>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {geoLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <LoadingSpinner />
-                </div>
-              ) : geoChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={geoChartData} layout="horizontal">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="country" type="category" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="events" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">
-                  <Globe className="h-12 w-12 text-gray-400 mb-4" />
-                  <p>No geographic data available</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Interactive Threat Map */}
+        <ThreatMap
+          threatData={geoChartData.map(item => ({
+            country: item.country,
+            countryCode: item.country,
+            latitude: 0, // Default coordinates, would be enhanced with actual geo data
+            longitude: 0,
+            threatLevel: 'medium' as const,
+            eventCount: item.events,
+            recentEvents: Math.floor(item.events * 0.3) // Estimate recent events
+          }))}
+          onCountryClick={(countryData) => console.log('Country clicked:', countryData)}
+          height={400}
+          className="lg:col-span-2"
+        />
 
         {/* Insights panel */}
         <Card>

@@ -20,7 +20,13 @@
     "lucide-react": "^0.294.0",
     "date-fns": "^2.30.0",
     "clsx": "^2.0.0",
-    "tailwind-merge": "^2.0.0"
+    "tailwind-merge": "^2.0.0",
+    "react-world-map": "^2.3.0",
+    "jspdf": "^2.5.1",
+    "xlsx": "^0.18.5",
+    "papaparse": "^5.4.1",
+    "@headlessui/react": "^1.7.17",
+    "react-table": "^7.8.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
