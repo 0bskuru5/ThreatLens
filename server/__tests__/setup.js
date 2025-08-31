@@ -6,6 +6,8 @@ process.env.DB_PORT = process.env.DB_PORT || '5432'
 process.env.DB_NAME = process.env.DB_NAME || 'threatlens_test'
 process.env.DB_USER = process.env.DB_USER || 'postgres'
 process.env.DB_PASSWORD = process.env.DB_PASSWORD || 'postgres'
+process.env.EMAIL_ENABLED = 'false' // Disable email during tests
+process.env.FRONTEND_URL = 'http://localhost:3000'
 
 // Mock external services
 jest.mock('../config/database', () => ({
